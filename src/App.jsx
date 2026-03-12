@@ -61,6 +61,13 @@ function App() {
     cube.position.y = 1
     scene.add(cube)
 
+    const wireframe = new THREE.LineSegments(
+      new THREE.EdgesGeometry(geometry),
+      new THREE.LineBasicMaterial({ color: 0x111111 })
+    )
+    wireframe.position.copy(cube.position)
+    scene.add(wireframe)
+
     // 7. animate
       const animate = () => {
       controls.update()
@@ -88,6 +95,10 @@ function App() {
     return () => {
       window.removeEventListener('resize', handleResize)
       controls.dispose()
+      geometry.dispose()
+      material.dispose()
+      wireframe.geometry.dispose()
+      wireframe.material.dispose()
       renderer.dispose()
 
       if (renderer.domElement && mountEl.contains(renderer.domElement)) {
