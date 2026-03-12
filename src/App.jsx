@@ -31,6 +31,11 @@ function App() {
         
     const controls = new OrbitControls(camera, renderer.domElement)
     controls.enableDamping = true
+    controls.mouseButtons = {
+      LEFT: THREE.MOUSE.ROTATE,
+      MIDDLE: THREE.MOUSE.PAN,
+      RIGHT: null,
+    }
     controls.target.set(0, 1, 0)
     controls.update()
 
