@@ -3,7 +3,7 @@
 A lightweight 3D CAD viewer built with React and Three.js, designed for geometry visualization and interaction in engineering workflows.
 
 ## Features
-- Load and display 3D models (OBJ format)
+- Load and display 3D models (OBJ+MTL format)
 - Interactive camera controls (orbit, zoom, pan)
 - Scene helpers including grid, axes, and lighting
 - Basic geometry visualization for engineering use cases
