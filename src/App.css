@@ -1,77 +1,131 @@
-.app {
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  color: #222;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.appShell {
   width: 100%;
   height: 100%;
   display: flex;
   flex-direction: column;
+  background: #f3f4f6;
 }
 
 .topBar {
-  height: 56px;
+  height: 64px;
+  border-bottom: 1px solid #d9dde3;
+  background: #ffffff;
   display: flex;
   align-items: center;
-  padding: 0 16px;
-  border-bottom: 1px solid #ddd;
-  background: #ffffff;
-  font-size: 18px;
-  font-weight: 600;
-  flex-shrink: 0;
+  padding: 0 20px;
 }
 
-.mainContent {
+.titleBlock h1 {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+.titleBlock p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #666;
+}
+
+.mainLayout {
   flex: 1;
-  min-height: 0;
   display: flex;
-}
-
-.viewerWrapper {
-  flex: 1;
-  min-width: 0;
   min-height: 0;
-  padding: 12px;
-  background: #f0f2f5;
-  position: relative;
-}
-
-.viewer {
-  width: 100%;
-  height: 100%;
-  min-height: 500px;
-  border: 1px solid #ccc;
-  background: #ffffff;
 }
 
 .sidePanel {
-  width: 280px;
+  width: 320px;
   padding: 16px;
-  border-left: 1px solid #ddd;
+  border-right: 1px solid #d9dde3;
   background: #fafafa;
+  overflow-y: auto;
 }
 
-.sidePanel h2 {
-  margin-top: 0;
+.panelCard {
+  background: #ffffff;
+  border: 1px solid #e1e5ea;
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 14px;
 }
 
-.uploadLabel {
-  display: inline-block;
-  margin-bottom: 8px;
-  font-size: 14px;
+.panelCard h2 {
+  margin: 0 0 12px;
+  font-size: 16px;
+}
+
+.uploadButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 8px;
+  background: #1f6feb;
+  color: white;
+  cursor: pointer;
   font-weight: 600;
 }
 
-.uploadInput {
-  width: 100%;
-  margin-bottom: 12px;
+.uploadButton input {
+  display: none;
 }
 
-.gridBadge {
-  position: absolute;
-  left: 20px;
-  bottom: 20px;
-  padding: 6px 10px;
-  border: 1px solid #d1d5db;
-  background: rgba(255, 255, 255, 0.92);
-  font-size: 12px;
-  color: #111827;
-  border-radius: 6px;
-  pointer-events: none;
+.hintText {
+  margin-top: 10px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #666;
+}
+
+.infoRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 14px;
+}
+
+.infoRow:last-child {
+  border-bottom: none;
+}
+
+.viewerArea {
+  flex: 1;
+  padding: 16px;
+  min-width: 0;
+  min-height: 0;
+}
+
+.viewerCanvas {
+  width: 100%;
+  height: 100%;
+  min-height: 520px;
+  border: 1px solid #d9dde3;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #ffffff;
 }
