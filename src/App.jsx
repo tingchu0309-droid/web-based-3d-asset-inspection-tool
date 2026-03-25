@@ -103,7 +103,7 @@ function fitCameraToObject(camera, controls, object) {
 
   const fov = camera.fov * (Math.PI / 180)
   let cameraDistance = safeMaxDim / (2 * Math.tan(fov / 2))
-  cameraDistance *= 1.6
+  cameraDistance *= 1.8
 
   camera.position.set(
     center.x + cameraDistance,
@@ -112,28 +112,45 @@ function fitCameraToObject(camera, controls, object) {
   )
 
   camera.near = Math.max(safeMaxDim / 1000, 0.1)
-  camera.far = Math.max(safeMaxDim * 20, 10000)
+  camera.far = Math.max(safeMaxDim * 30, 20000)
   camera.updateProjectionMatrix()
 
-  controls.target.set(center.x, center.y, center.z)
+  controls.target.set(center.x, center.y + size.y * 0.2, center.z)
   controls.update()
 
   return { box, size, center }
 }
 
-function updateAdaptiveGrid(scene, gridHelperRef, sizeVec) {
+function getNiceStep(rawStep) {
+  if (rawStep <= 0) return 1
+
+  const exponent = Math.floor(Math.log10(rawStep))
+  const magnitude = 10 ** exponent
+  const fraction = rawStep / magnitude
+
+  let niceFraction = 1
+  if (fraction <= 1) niceFraction = 1
+  else if (fraction <= 2) niceFraction = 2
+  else if (fraction <= 5) niceFraction = 5
+  else niceFraction = 10
+
+  return niceFraction * magnitude
+}
+
+function updateAdaptiveGrid(scene, gridHelperRef, centerLinesRef, sizeVec) {
   const maxDim = Math.max(sizeVec.x, sizeVec.y, sizeVec.z, 1)
 
-  let gridSize = Math.ceil(maxDim * 2)
-  gridSize = Math.max(gridSize, 200)
+  // 让 grid 比模型大很多，看起来更舒服
+  const targetGridSize = maxDim * 3.2
 
-  let cellSize = 1
-  if (maxDim > 20) cellSize = 2
-  if (maxDim > 50) cellSize = 5
-  if (maxDim > 200) cellSize = 10
-  if (maxDim > 500) cellSize = 20
+  // 希望大约 28~36 个 cell，视觉上比较均匀
+  const rawCellSize = targetGridSize / 32
+  const cellSize = getNiceStep(rawCellSize)
 
-  let divisions = Math.floor(gridSize / cellSize)
+  let gridSize = Math.ceil(targetGridSize / cellSize) * cellSize
+  gridSize = Math.max(gridSize, cellSize * 10)
+
+  let divisions = Math.round(gridSize / cellSize)
   divisions = Math.max(divisions, 1)
 
   if (gridHelperRef.current) {
@@ -142,9 +159,37 @@ function updateAdaptiveGrid(scene, gridHelperRef, sizeVec) {
     gridHelperRef.current = null
   }
 
-  const newGrid = new THREE.GridHelper(gridSize, divisions, 0x666666, 0xcfcfcf)
-  scene.add(newGrid)
-  gridHelperRef.current = newGrid
+  if (centerLinesRef.current) {
+    scene.remove(centerLinesRef.current)
+    disposeHelper(centerLinesRef.current)
+    centerLinesRef.current = null
+  }
+
+  const grid = new THREE.GridHelper(
+    gridSize,
+    divisions,
+    0x8a8a8a,
+    0xd7d7d7
+  )
+  grid.position.set(0, 0, 0)
+  scene.add(grid)
+  gridHelperRef.current = grid
+
+  // 再加一个中心十字线，主轴更明显
+  const lineMaterial = new THREE.LineBasicMaterial({ color: 0x666666 })
+
+  const half = gridSize / 2
+  const points = [
+    new THREE.Vector3(-half, 0.001, 0),
+    new THREE.Vector3(half, 0.001, 0),
+    new THREE.Vector3(0, 0.001, -half),
+    new THREE.Vector3(0, 0.001, half),
+  ]
+
+  const centerGeometry = new THREE.BufferGeometry().setFromPoints(points)
+  const centerLines = new THREE.LineSegments(centerGeometry, lineMaterial)
+  scene.add(centerLines)
+  centerLinesRef.current = centerLines
 
   return {
     size: gridSize,
@@ -213,6 +258,7 @@ async function loadObjWithOptionalMtl(files) {
   if (mtlFile) {
     let mtlText = await mtlFile.text()
 
+    // 修正某些 mtl 导出成完全透明
     mtlText = mtlText.replace(/^Tr\s+1(\.0+)?$/gm, 'Tr 0.000000')
 
     const mtlLoader = new MTLLoader(loadingManager)
@@ -277,6 +323,7 @@ function App() {
 
   const modelRef = useRef(null)
   const gridHelperRef = useRef(null)
+  const centerLinesRef = useRef(null)
   const axesHelperRef = useRef(null)
   const boxHelperRef = useRef(null)
   const animationFrameRef = useRef(null)
@@ -304,7 +351,7 @@ function App() {
     if (!mountEl) return
 
     const scene = new THREE.Scene()
-    scene.background = new THREE.Color(0xe6e6e6)
+    scene.background = new THREE.Color(0xe8e8e8)
     sceneRef.current = scene
 
     const camera = new THREE.PerspectiveCamera(
@@ -330,18 +377,30 @@ function App() {
     controls.update()
     controlsRef.current = controls
 
-    const initialGrid = new THREE.GridHelper(200, 200, 0x666666, 0xcfcfcf)
+    const initialGrid = new THREE.GridHelper(40, 20, 0x8a8a8a, 0xd7d7d7)
     scene.add(initialGrid)
     gridHelperRef.current = initialGrid
 
-    const axesHelper = new THREE.AxesHelper(200)
+    const initialCenterMaterial = new THREE.LineBasicMaterial({ color: 0x666666 })
+    const initialCenterPoints = [
+      new THREE.Vector3(-20, 0.001, 0),
+      new THREE.Vector3(20, 0.001, 0),
+      new THREE.Vector3(0, 0.001, -20),
+      new THREE.Vector3(0, 0.001, 20),
+    ]
+    const initialCenterGeometry = new THREE.BufferGeometry().setFromPoints(initialCenterPoints)
+    const initialCenterLines = new THREE.LineSegments(initialCenterGeometry, initialCenterMaterial)
+    scene.add(initialCenterLines)
+    centerLinesRef.current = initialCenterLines
+
+    const axesHelper = new THREE.AxesHelper(300)
     scene.add(axesHelper)
     axesHelperRef.current = axesHelper
 
     const ambientLight = new THREE.AmbientLight(0xffffff, 1.1)
     scene.add(ambientLight)
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.2)
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.25)
     directionalLight.position.set(10, 12, 8)
     directionalLight.castShadow = true
     scene.add(directionalLight)
@@ -389,6 +448,12 @@ function App() {
         scene.remove(boxHelperRef.current)
         disposeHelper(boxHelperRef.current)
         boxHelperRef.current = null
+      }
+
+      if (centerLinesRef.current) {
+        scene.remove(centerLinesRef.current)
+        disposeHelper(centerLinesRef.current)
+        centerLinesRef.current = null
       }
 
       if (axesHelperRef.current) {
@@ -475,14 +540,19 @@ function App() {
         boxHelperRef.current = null
       }
 
-      const boxHelper = new THREE.BoxHelper(loadedObject, 0xff6600)
+      const boxHelper = new THREE.BoxHelper(loadedObject, 0xff6a00)
       scene.add(boxHelper)
       boxHelperRef.current = boxHelper
 
       const fitResult = fitCameraToObject(camera, controls, loadedObject)
       console.log('fit size =', fitResult.size)
 
-      const nextGridInfo = updateAdaptiveGrid(scene, gridHelperRef, fitResult.size)
+      const nextGridInfo = updateAdaptiveGrid(
+        scene,
+        gridHelperRef,
+        centerLinesRef,
+        fitResult.size
+      )
       if (nextGridInfo) {
         setGridInfo(nextGridInfo)
       }
